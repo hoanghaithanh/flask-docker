@@ -1,13 +1,24 @@
 FROM python:3.8.6-buster
 
-# Set the working directory to /app
-WORKDIR /app
+LABEL MAINTAINER="Thanh Hoang <hhthanh.hust@gmail.com>"
 
-# Copy the current directory contents into the container at /app
-ADD . /app
+ENV GROUP_ID=1000 \
+    USER_ID=1000
 
-# Install the dependencies
+WORKDIR /var/www/
+
+ADD ./requirements.txt /var/www/requirements.txt
 RUN pip install -r requirements.txt
+ADD . /var/www/
+RUN pip install gunicorn
 
-# run the command to start uWSGI
-CMD ["uwsgi", "app.ini"]
+RUN addgroup --gid $GROUP_ID www
+RUN adduser --disabled-login -u $USER_ID --ingroup www www --shell /bin/sh
+
+USER www
+RUN pwd
+RUN ls
+EXPOSE 5000
+
+#CMD ["tail", "-f", "/dev/null"]
+CMD [ "gunicorn", "-w", "4", "--bind", "0.0.0.0:5000", "wsgi:app"]
